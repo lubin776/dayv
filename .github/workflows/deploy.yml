@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,12 +24,11 @@ jobs:
         with:
           node-version: 24
 
-      - name: Generate lock file
+      - name: Force generate lock file
         run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only
-          fi
-
+          rm -f package-lock.json
+          npm install --package-lock-only --no-audit --no-fund
+          
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
