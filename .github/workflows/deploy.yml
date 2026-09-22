@@ -1,9 +1,8 @@
-name: 初始化部署 GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,7 +11,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -20,21 +19,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 安装 Node 24
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 24
 
-      - run: npm ci
-      - run: node build.js
-
-      - name: Add CNAME (optional)
+      # 生成 package-lock.json（如果没有）
+      - name: Generate lock file
         run: |
-          if [ -n "${{ secrets.CNAME }}" ]; then
-            echo "${{ secrets.CNAME }}" > dist/CNAME
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only
           fi
 
-      - uses: actions/configure-pages@v5
+      # 安装依赖
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      # 构建
+      - name: Build
+        run: node build.js
+
+      # 上传产物
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
@@ -46,5 +51,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@v4
+        id: deployment
